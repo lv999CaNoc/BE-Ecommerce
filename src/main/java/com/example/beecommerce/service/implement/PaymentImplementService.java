@@ -10,6 +10,7 @@ import com.example.beecommerce.service.OrderService;
 import com.example.beecommerce.service.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -28,6 +29,11 @@ public class PaymentImplementService implements PaymentService {
     @Autowired
     private OrderService orderService;
 
+    @Value("${client.base.url}")
+    private static String FE_URL;
+    @Value("${server.base.url}")
+    private static String BE_URL;
+
     @Override
     public PaymentResponse createVnpay(VnpayRequest vnpayRequest) {
         List<Long> listId = new ArrayList<Long>(Arrays.asList(vnpayRequest.getList_id_order()));
@@ -36,7 +42,7 @@ public class PaymentImplementService implements PaymentService {
             joiner.add(String.valueOf(id));
         }
         String result = joiner.toString();
-        String returnUrl = "http://localhost:8080/api/v1/payment/vnpay/success?list_id=" + result;
+        String returnUrl = BE_URL+"api/v1/payment/vnpay/success?list_id=" + result;
 
         String vnp_TxnRef = VnpayConfig.getRandomNumber(8);
 
@@ -116,7 +122,7 @@ public class PaymentImplementService implements PaymentService {
 
     @Override
     public RedirectView paymentSuccess(String vnp_ResponseCode, List<Long> listId) throws URISyntaxException {
-        RedirectView redirectView = new RedirectView("http://localhost:3000/account/purchase");
+        RedirectView redirectView = new RedirectView(FE_URL+"account/purchase");
         if (!vnp_ResponseCode.equals("00")) {
             return redirectView;
         }

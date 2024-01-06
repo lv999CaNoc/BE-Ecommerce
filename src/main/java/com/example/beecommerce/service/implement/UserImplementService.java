@@ -40,13 +40,13 @@ public class UserImplementService implements UserService {
     private RoleRepository roleRepository;
 
     @Override
-    public List<com.example.beecommerce.pojo.entity.User> listAll() {
-        List<com.example.beecommerce.pojo.entity.User> users = userRepository.findAll();
+    public List<User> listAll() {
+        List<User> users = userRepository.findAll();
         return users;
     }
 
     @Override
-    public com.example.beecommerce.pojo.entity.User saveUser(UserRequest userDTO) {
+    public User saveUser(UserRequest userDTO) {
         Date date = new Date();
         User user = new User();
         String encodedPassword = passwordEncoder.encode(userDTO.getPassword());
