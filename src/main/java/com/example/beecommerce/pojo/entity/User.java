@@ -1,6 +1,8 @@
 package com.example.beecommerce.pojo.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +11,8 @@ import java.util.Date;
 @Entity
 @Table(name = "users")
 @Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class User {
     @Id
@@ -24,7 +28,8 @@ public class User {
     private String photo;
     @Column(length = 45,nullable = false)
     private String name;
-    private Boolean isActive = true;
+    private Boolean isActive;
+    private Boolean isLocked;
     private Date createdAt;
     private Date updatedAt;
     @ManyToOne(fetch = FetchType.EAGER)

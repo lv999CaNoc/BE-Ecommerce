@@ -55,4 +55,12 @@ public class AuthController {
                 new ObjectResponse(HttpStatus.OK, "Register user successfully", user)
         );
     }
+
+    @GetMapping("/verify-register")
+    public ResponseEntity<?> verifyRegister(@RequestParam String token) {
+        if (userService.verifyRegister(token)) {
+            return ResponseEntity.ok("Verify email successfully");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Verify email failed: Invalid token");
+    }
 }

@@ -10,9 +10,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public interface UserRepository extends JpaRepository<User,Long> {
     User findUserById(Long id);
     void deleteUserById(long id);
+
     Page<User> findAll(Pageable pageable);
 
     Page<User> getUsersByIsActive(Pageable pageable,boolean isActive);
 
     User getUserByEmailAndIsActive(String email,boolean isActive);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
 }

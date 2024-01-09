@@ -25,4 +25,6 @@ public interface UserService {
     User getUserById(Long id);
 
     User register(AccountRegisterRequest account);
+
+    boolean verifyRegister(String token);
 }

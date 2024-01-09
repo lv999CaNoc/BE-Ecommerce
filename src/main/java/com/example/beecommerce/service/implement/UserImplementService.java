@@ -3,6 +3,7 @@ package com.example.beecommerce.service.implement;
 import com.example.beecommerce.exception.RoleNotFoundException;
 import com.example.beecommerce.exception.UserNotFoundException;
 import com.example.beecommerce.pojo.entity.Role;
+import com.example.beecommerce.pojo.entity.SecureToken;
 import com.example.beecommerce.pojo.entity.User;
 import com.example.beecommerce.pojo.requests.AccountRegisterRequest;
 import com.example.beecommerce.pojo.requests.ResetPasswordRequest;
@@ -12,7 +13,10 @@ import com.example.beecommerce.pojo.responses.UserPageResponse;
 import com.example.beecommerce.repository.RoleRepository;
 import com.example.beecommerce.repository.UserRepository;
 import com.example.beecommerce.security.JWTGenerator;
+import com.example.beecommerce.service.MailService;
+import com.example.beecommerce.service.SecureTokenService;
 import com.example.beecommerce.service.UserService;
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -38,6 +40,10 @@ public class UserImplementService implements UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private SecureTokenService secureTokenService;
+    @Autowired
+    private MailService mailService;
 
     @Override
     public List<User> listAll() {
@@ -119,7 +125,7 @@ public class UserImplementService implements UserService {
     public void resetPassword(ResetPasswordRequest resetPasswordRequest, Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id " + id));
-        String encodedPassword = passwordEncoder.encode("123456");
+        String encodedPassword = passwordEncoder.encode("Globebuy@1234");
         user.setPassword(encodedPassword);
     }
 
@@ -134,6 +140,12 @@ public class UserImplementService implements UserService {
 
     @Override
     public User register(AccountRegisterRequest account) {
+        if (userRepository.existsByEmail(account.getEmail())){
+            throw new UserNotFoundException("Username đã tồn tại.");
+        }
+        if (userRepository.existsByUsername(account.getUsername())) {
+            throw new UserNotFoundException("Username đã tồn tại.");
+        }
         User user = new User();
         user.setUsername(account.getUsername());
         user.setEmail(account.getEmail());
@@ -145,8 +157,31 @@ public class UserImplementService implements UserService {
                 : roleRepository.findRoleByName("customer");
         user.setRole(custumer_role);
         user.setCreatedAt(new Date());
+        user.setIsActive(false);
+        user.setIsLocked(false);
         userRepository.save(user);
+        try {
+            mailService.sendRegisterVerifyEmail(user);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Send mail failed!");
+        }
         return user;
     }
 
+    @Override
+    public boolean verifyRegister(String token) {
+        SecureToken secureToken = secureTokenService.findByToken(token);
+        if (Objects.isNull(secureToken) || secureToken.isExpired()) {
+            throw new RuntimeException("Token is expired.");
+        }
+        Optional<User> user = userRepository.findById(secureToken.getUser().getId());
+        if (Objects.isNull(user) || user.isEmpty()) {
+            return false;
+        }
+        User verifyUser = user.get();
+        verifyUser.setIsActive(true);
+        userRepository.save(verifyUser);
+        secureTokenService.removeToken(secureToken);
+        return true;
+    }
 }
